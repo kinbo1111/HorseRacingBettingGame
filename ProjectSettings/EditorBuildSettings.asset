@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/My Assets/Scenes/1 Title.unity
+    guid: db40fe6c86371c1478960dcb70b52e9e
+  - enabled: 1
+    path: Assets/My Assets/Scenes/2 Main.unity
+    guid: 6405c96cdbdc41c42ae295e447d9d84f
+  - enabled: 1
+    path: Assets/My Assets/Scenes/3 Lobby.unity
+    guid: e312fae59689acf42888b7bf3aa53b6b
+  - enabled: 1
+    path: Assets/My Assets/Scenes/4.1 HorseSelection.unity
+    guid: 5264f749521da35449da646f81b9834a
+  - enabled: 1
+    path: Assets/My Assets/Scenes/4.2 Betting.unity
+    guid: 26a35600a5ac1c1428791ec8b3f340cd
+  - enabled: 1
+    path: Assets/My Assets/Scenes/4.3 BetEvaluation.unity
+    guid: bb289de22147c40458bac1493e4e176a
+  - enabled: 1
+    path: Assets/My Assets/Scenes/5.1 DeliverAim.unity
+    guid: b3557e8d091634e40826bf6d1df68f60
+  - enabled: 1
+    path: Assets/My Assets/Scenes/5.2.1 Delivering.unity
+    guid: 448df08ac2a30fd4f993aec407597243
+  - enabled: 1
+    path: Assets/My Assets/Scenes/5.3 DeliverEvaluation.unity
+    guid: bae69cff8236a6f469c36edd25669e33
+  - enabled: 1
+    path: Assets/My Assets/Scenes/6 Ending.unity
+    guid: 4c3247e48d977f9468996d22f7a615a8
+  - enabled: 1
+    path: Assets/My Assets/Scenes/7 Options.unity
+    guid: 46ebdaff2c8e24a40ad4a3ecc76e51c0
+  - enabled: 1
+    path: Assets/My Assets/Scenes/8 About.unity
+    guid: ef587b2c74397ef468c0664ba465204d
+  m_configObjects:
+    com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000,
+      guid: fe18b450d7fad55449a3e5728e201eb4, type: 2}
