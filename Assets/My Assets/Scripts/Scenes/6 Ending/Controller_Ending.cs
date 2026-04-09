@@ -2,15 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Video;
 
 public class Controller_Ending : MonoBehaviour
 {
-
-    //////////////////////////////////////////////////////////////////////
-    /// <summary>
-    /// Types
-    /// </summary>
-    //////////////////////////////////////////////////////////////////////
     #region Types
 
     public enum GameState_En
@@ -20,14 +15,8 @@ public class Controller_Ending : MonoBehaviour
 
     #endregion
 
-    //////////////////////////////////////////////////////////////////////
-    /// <summary>
-    /// Fields
-    /// </summary>
-    //////////////////////////////////////////////////////////////////////
     #region Fields
 
-    //-------------------------------------------------- serialize fields
     [SerializeField] CurtainHandler curtain_Cp;
     [SerializeField] AudioHandler audio_Cp;
     [SerializeField] UIManager_Ending ui_Cp;
@@ -37,62 +26,40 @@ public class Controller_Ending : MonoBehaviour
     [SerializeField] List<float> resultThresholds = new List<float>();
     [SerializeField] AudioSource resultAudioS_Cp;
     [SerializeField] AudioClip succAudioClip, failedAudioClip;
+    [SerializeField] List<VideoClip> resultVideos = new List<VideoClip>();
+    [Header("Debug Ending (Editor Test)")]
+    [SerializeField] bool useDebugMoney = false;
+    [SerializeField] int debugMoney = -1;
 
-    //-------------------------------------------------- public fields
     [ReadOnly] public List<GameState_En> gameStates = new List<GameState_En>();
     [ReadOnly] public int gResultLevel;
 
-    //-------------------------------------------------- private fields
     DataManager dataManager_Cp;
 
     #endregion
 
-    //////////////////////////////////////////////////////////////////////
-    /// <summary>
-    /// Properties
-    /// </summary>
-    //////////////////////////////////////////////////////////////////////
     #region Properties
 
-    //-------------------------------------------------- public properties
     public GameState_En mainGameState
     {
         get { return gameStates[0]; }
         set { gameStates[0] = value; }
     }
 
-    //-------------------------------------------------- private properties
-
     #endregion
 
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-    /// <summary>
-    /// Methods
-    /// </summary>
-    //////////////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////////////
-
-    // Start is called before the first frame update
     void Start()
     {
         Init();
     }
 
-    // Update is called once per frame
     void Update()
     {
 
     }
 
-    //////////////////////////////////////////////////////////////////////
-    /// <summary>
-    /// Manage gameStates
-    /// </summary>
-    //////////////////////////////////////////////////////////////////////
     #region ManageGameStates
 
-    //--------------------------------------------------
     public void AddMainGameState(GameState_En value = GameState_En.Nothing)
     {
         if (gameStates.Count == 0)
@@ -101,7 +68,6 @@ public class Controller_Ending : MonoBehaviour
         }
     }
 
-    //--------------------------------------------------
     public void AddGameStates(params GameState_En[] values)
     {
         foreach (GameState_En value_tp in values)
@@ -110,7 +76,6 @@ public class Controller_Ending : MonoBehaviour
         }
     }
 
-    //--------------------------------------------------
     public bool ExistGameStates(params GameState_En[] values)
     {
         bool result = true;
@@ -126,7 +91,6 @@ public class Controller_Ending : MonoBehaviour
         return result;
     }
 
-    //--------------------------------------------------
     public bool ExistAnyGameStates(params GameState_En[] values)
     {
         bool result = false;
@@ -142,7 +106,6 @@ public class Controller_Ending : MonoBehaviour
         return result;
     }
 
-    //--------------------------------------------------
     public int GetExistGameStatesCount(GameState_En value)
     {
         int result = 0;
@@ -158,7 +121,6 @@ public class Controller_Ending : MonoBehaviour
         return result;
     }
 
-    //--------------------------------------------------
     public void RemoveGameStates(params GameState_En[] values)
     {
         foreach (GameState_En value in values)
@@ -169,9 +131,6 @@ public class Controller_Ending : MonoBehaviour
 
     #endregion
 
-    //////////////////////////////////////////////////////////////////////
-    /// Initialize
-    //////////////////////////////////////////////////////////////////////
     #region Initialize
 
     public void Init()
@@ -223,22 +182,35 @@ public class Controller_Ending : MonoBehaviour
 
     void InitGameResultLevel()
     {
+        // Determine ending level based on final money.
+        // Mapping:
+        // 0: 収支マイナス -> use 1.mp4
+        // 1: 1円～1000万円未満 -> use 2.mp4
+        // 2: 2000万円～1億円 -> use 3.mp4
+        // 3: 1億円以上 -> use 4.mp4
         GameData_St gameData_tp = dataManager_Cp.gameData;
-        if (gameData_tp.totalBettingCount > (dataManager_Cp.endAge - dataManager_Cp.startAge) * 12 / 4)
+        int finalMoney = useDebugMoney ? debugMoney : gameData_tp.money;
+
+        if (finalMoney < 0)
         {
-            float succPercent = (float)gameData_tp.successBettingCount / (float)gameData_tp.totalBettingCount * 100f;
-            for (int i = 0; i < resultThresholds.Count; i++)
-            {
-                if (succPercent >= resultThresholds[i])
-                {
-                    gResultLevel = i;
-                    break;
-                }
-            }
+            gResultLevel = 0; // 収支マイナス
+        }
+        else if (finalMoney < 10000000) // < 10,000,000 (1円～1000万円未満)
+        {
+            gResultLevel = 1;
+        }
+        else if (finalMoney >= 20000000 && finalMoney < 100000000) // 20,000,000 ～ 100,000,000 (2000万円～1億円)
+        {
+            gResultLevel = 2;
+        }
+        else if (finalMoney >= 100000000) // >= 1億円
+        {
+            gResultLevel = 3;
         }
         else
         {
-            gResultLevel = resultThresholds.Count - 1;
+            // Fallback: treat values between 10,000,000 and 19,999,999 as the lower tier (1)
+            gResultLevel = 1;
         }
     }
 
@@ -248,8 +220,27 @@ public class Controller_Ending : MonoBehaviour
         GameData_St gameData_tp = dataManager_Cp.gameData;
         ui_Cp.totalBettingCount = gameData_tp.totalBettingCount;
         ui_Cp.bettingSuccCountText = gameData_tp.successBettingCount;
-        ui_Cp.resultSprite = resultSprites[gResultLevel];
-        ui_Cp.resultText = resultTexts[gResultLevel];
+        ui_Cp.resultSprite = resultSprites.Count > gResultLevel ? resultSprites[gResultLevel] : null;
+
+        // Fixed ending text per result level.
+        // This is always used so each ending shows the intended sentence block.
+        List<string> fixedResultTexts = new List<string>()
+        {
+            "【収支マイナス】\n財政的に大きな失敗をし、老後には全財産を失ってしまいます。絶望の中で生きる希望を見失い、最終的には自らの命を絶つことを選ぶという悲劇的な結末です。プレイヤーにとっては、人生における金銭管理の重要さと失敗のリスクを強調した教訓的なエンディングです。",
+            "【1円～1000万円未満】\n老後にはなんとか生き延びるだけの資産を持っていますが、その生活は非常に厳しく、古くてボロボロの家に住むことを余儀なくされます。医療や生活費に困り、日々の生活は常に苦労を伴いますが、なんとかやりくりしながら生活を続けていくという、少し報われない結末です。",
+            "【2000万円～1億円】\nそれなりに成功を収めた老後生活が待っています。大きな贅沢はできませんが、生活に余裕があり、旅行や趣味を楽しむことも可能です。老後資金を計画的に準備していたプレイヤーは、安心感のある暮らしを送ることができ、家族や友人との時間をゆっくりと過ごすことができる穏やかなエンディングです。",
+            "【1億円以上】\n財産を築き上げ、非常に裕福な老後を迎えることができます。豪華客船での世界一周旅行や、誰もが憧れるような贅沢な暮らしを満喫します。何不自由ない生活を送るだけでなく、周りからも尊敬され、老後の時間を最大限に楽しむことができる、最も理想的で華やかな結末です。"
+        };
+
+        string assignText = fixedResultTexts[gResultLevel];
+
+        ui_Cp.resultText = assignText;
+        ui_Cp.SetFinalMoney(gameData_tp.money);
+
+        if (resultVideos != null && resultVideos.Count > gResultLevel && resultVideos[gResultLevel] != null)
+        {
+            ui_Cp.PlayVideo(resultVideos[gResultLevel]);
+        }
     }
 
     void InitAudio()
@@ -284,9 +275,6 @@ public class Controller_Ending : MonoBehaviour
         dataManager_Cp.ResetAndLoadData();
     }
 
-    //////////////////////////////////////////////////////////////////////
-    /// Finish
-    //////////////////////////////////////////////////////////////////////
     #region Finish
 
     public void Escape()
