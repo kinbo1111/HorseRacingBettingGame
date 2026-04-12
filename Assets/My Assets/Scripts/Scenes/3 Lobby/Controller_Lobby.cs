@@ -213,6 +213,11 @@ public class Controller_Lobby : MonoBehaviour
         }
         GameObject.DontDestroyOnLoad(dataManager_Cp.gameObject);
 
+        if (dataManager_Cp.GetComponent<IapManager>() == null)
+        {
+            dataManager_Cp.gameObject.AddComponent<IapManager>();
+        }
+
         if (dataManager_Cp.gameStates.Count > 0 && dataManager_Cp.mainGameState == DataManager.GameState_En.Inited)
         {
             return;

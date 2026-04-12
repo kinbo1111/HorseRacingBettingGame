@@ -214,7 +214,7 @@ public class UIManager_Delivering : MonoBehaviour
 
     public void SetCoin(int coin)
     {
-        coinText_Cp.text = coin.ToString() + "円";
+        coinText_Cp.text = coin.ToString();
     }
 
     public void SetHp(float hpPercent)

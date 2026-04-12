@@ -93,7 +93,7 @@ public class UIManager_HorseSelection : MonoBehaviour
     }
     public int money
     {
-        set { moneyText_Cp.text = value.ToString() + "円"; }
+        set { moneyText_Cp.text = value.ToString(); }
     }
     public int age
     {
@@ -113,7 +113,7 @@ public class UIManager_HorseSelection : MonoBehaviour
     }
     public int minBettingMoney
     {
-        set { minBettingMoneyText_Cp.text = "最小" + value.ToString() + "円"; }
+        set { minBettingMoneyText_Cp.text = "最小" + value.ToString(); }
     }
 
     //-------------------------------------------------- private properties

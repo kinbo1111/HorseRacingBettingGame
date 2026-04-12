@@ -82,7 +82,7 @@ namespace DigitalRuby.WeatherMaker
         private void AddNullZone()
         {
             // these are cleared every frame, safe to add over and over again
-            if (WeatherMakerLightManagerScript.Instance != null && NullZoneActive)
+            if (WeatherMakerLightManagerScript.HasInstance() && NullZoneActive)
             {
                 if (BoxCollider != null)
                 {
@@ -155,7 +155,7 @@ namespace DigitalRuby.WeatherMaker
 
         private void OnEnable()
         {
-            if (WeatherMakerScript.Instance == null)
+            if (!WeatherMakerScript.HasInstance())
             {
                 return;
             }
