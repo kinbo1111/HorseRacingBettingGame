@@ -36,8 +36,11 @@ public class UIManager_Lobby : MonoBehaviour
     [SerializeField] Text totalBettingCountText_Cp, successBettingCountText_Cp;
     [SerializeField] Button bettingButton_Cp, deliveringButton_Cp;
     [SerializeField] Text minBettingMoneyText_Cp;
+    /// <summary>Lobby Middle Panel (最小ベット額 etc.); hidden while billing is open so it does not show through the modal.</summary>
+    [SerializeField] GameObject lobbyMiddlePanelWhileBilling_GO;
     [SerializeField] GameObject billingPanel_GO;
     [SerializeField] RectTransform openBillingPlusButton_RT;
+    [SerializeField] RectTransform billingPromoButton_RT;
     [SerializeField] RectTransform actionButtonsPanel_RT;
     [SerializeField] Sprite billingCoinSprite;
     [SerializeField] Sprite billingPriceBadgeSprite;
@@ -61,6 +64,10 @@ public class UIManager_Lobby : MonoBehaviour
         "IAP Buy 10000 Button",
         "IAP Buy 50000 Button",
     };
+    const string BillingPromoButtonName = "Open Billing Promo Button";
+    const string LobbyMoneyChipBgName = "Lobby Money Chip Bg";
+
+    Sprite _lobbyUiSlicedSpriteCache;
 
     #endregion
 
@@ -292,6 +299,28 @@ public class UIManager_Lobby : MonoBehaviour
         {
             actionButtonsPanel_RT = bettingButton_Cp.transform.parent as RectTransform;
         }
+
+        EnsureLobbyMiddlePanelWhileBillingRef();
+    }
+
+    void EnsureLobbyMiddlePanelWhileBillingRef()
+    {
+        if (lobbyMiddlePanelWhileBilling_GO != null)
+        {
+            return;
+        }
+
+        Transform canvasPanel = transform.Find("Canvas Panel");
+        if (canvasPanel == null)
+        {
+            return;
+        }
+
+        Transform middle = canvasPanel.Find("Middle Panel");
+        if (middle != null)
+        {
+            lobbyMiddlePanelWhileBilling_GO = middle.gameObject;
+        }
     }
 
     public void InitGameDataUI()
@@ -322,6 +351,35 @@ public class UIManager_Lobby : MonoBehaviour
         }
     }
 
+    void EnsureBillingPromoButtonReference()
+    {
+        if (billingPromoButton_RT != null)
+        {
+            return;
+        }
+
+        GameObject existing = GameObject.Find(BillingPromoButtonName);
+        if (existing != null)
+        {
+            billingPromoButton_RT = existing.GetComponent<RectTransform>();
+            return;
+        }
+
+        Transform topPanel = GameObject.Find("Top Panel")?.transform;
+        if (topPanel == null)
+        {
+            return;
+        }
+
+        GameObject promoGo = new GameObject(BillingPromoButtonName, typeof(RectTransform), typeof(Image), typeof(Button));
+        billingPromoButton_RT = promoGo.GetComponent<RectTransform>();
+        billingPromoButton_RT.SetParent(topPanel, false);
+
+        GameObject textGo = new GameObject("Text", typeof(RectTransform), typeof(Text));
+        RectTransform textRt = textGo.GetComponent<RectTransform>();
+        textRt.SetParent(billingPromoButton_RT, false);
+    }
+
     void AttachOpenBillingButtonToMoneyPanel(RectTransform moneyPanelRt)
     {
         if (openBillingPlusButton_RT == null || moneyPanelRt == null)
@@ -350,10 +408,10 @@ public class UIManager_Lobby : MonoBehaviour
         {
             hitGraphic.raycastTarget = true;
             hitGraphic.canvasRenderer.cullTransparentMesh = false;
-            Color c = hitGraphic.color;
-            if (c.a <= 0f)
+            if (hitGraphic.color.a < 0.15f)
             {
-                c.a = 1f / 255f;
+                Color c = hitGraphic.color;
+                c.a = 1f;
                 hitGraphic.color = c;
             }
         }
@@ -361,6 +419,132 @@ public class UIManager_Lobby : MonoBehaviour
         {
             t.raycastTarget = true;
         }
+    }
+
+    void EnsureLobbyUiSlicedSpriteCached()
+    {
+        if (_lobbyUiSlicedSpriteCache != null)
+        {
+            return;
+        }
+
+        if (billingPanel_GO != null)
+        {
+            Transform bc = billingPanel_GO.transform.Find("Billing Content");
+            Image panelImg = bc != null ? bc.GetComponent<Image>() : null;
+            if (panelImg != null && panelImg.sprite != null)
+            {
+                _lobbyUiSlicedSpriteCache = panelImg.sprite;
+            }
+        }
+
+        if (_lobbyUiSlicedSpriteCache == null && openBillingPlusButton_RT != null)
+        {
+            Image ob = openBillingPlusButton_RT.GetComponent<Image>();
+            if (ob != null && ob.sprite != null)
+            {
+                _lobbyUiSlicedSpriteCache = ob.sprite;
+            }
+        }
+    }
+
+    void EnsureLobbyMoneyChipBackground(RectTransform moneyPanelRt)
+    {
+        if (moneyPanelRt == null)
+        {
+            return;
+        }
+
+        EnsureLobbyUiSlicedSpriteCached();
+
+        RectTransform bgRt = moneyPanelRt.Find(LobbyMoneyChipBgName) as RectTransform;
+        if (bgRt == null)
+        {
+            GameObject go = new GameObject(LobbyMoneyChipBgName, typeof(RectTransform), typeof(Image));
+            bgRt = go.GetComponent<RectTransform>();
+            bgRt.SetParent(moneyPanelRt, false);
+        }
+
+        bgRt.SetAsFirstSibling();
+        bgRt.anchorMin = Vector2.zero;
+        bgRt.anchorMax = Vector2.one;
+        bgRt.pivot = new Vector2(0.5f, 0.5f);
+        bgRt.offsetMin = Vector2.zero;
+        bgRt.offsetMax = Vector2.zero;
+        bgRt.localScale = Vector3.one;
+
+        Image bgImg = bgRt.GetComponent<Image>();
+        bgImg.sprite = _lobbyUiSlicedSpriteCache;
+        bgImg.type = bgImg.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
+        bgImg.color = new Color(0.06f, 0.1f, 0.18f, 0.93f);
+        bgImg.raycastTarget = false;
+        bgImg.preserveAspect = false;
+
+        Outline outline = bgRt.GetComponent<Outline>();
+        if (outline == null)
+        {
+            outline = bgRt.gameObject.AddComponent<Outline>();
+        }
+        outline.effectColor = new Color(0.38f, 0.78f, 1f, 0.42f);
+        outline.effectDistance = new Vector2(1f, -1f);
+        outline.useGraphicAlpha = true;
+
+        Shadow shadow = bgRt.GetComponent<Shadow>();
+        if (shadow == null)
+        {
+            shadow = bgRt.gameObject.AddComponent<Shadow>();
+        }
+        shadow.effectColor = new Color(0f, 0f, 0f, 0.5f);
+        shadow.effectDistance = new Vector2(0f, -4f);
+        shadow.useGraphicAlpha = true;
+    }
+
+    static void EnsureBillingPlusDivider(RectTransform plusButtonRt)
+    {
+        if (plusButtonRt == null)
+        {
+            return;
+        }
+
+        const string dividerName = "Lobby Plus Divider";
+        RectTransform divRt = plusButtonRt.Find(dividerName) as RectTransform;
+        if (divRt == null)
+        {
+            GameObject divGo = new GameObject(dividerName, typeof(RectTransform), typeof(Image));
+            divRt = divGo.GetComponent<RectTransform>();
+            divRt.SetParent(plusButtonRt, false);
+        }
+
+        divRt.SetAsFirstSibling();
+        divRt.anchorMin = new Vector2(0f, 0.12f);
+        divRt.anchorMax = new Vector2(0f, 0.88f);
+        divRt.pivot = new Vector2(0f, 0.5f);
+        divRt.sizeDelta = new Vector2(2f, 0f);
+        divRt.anchoredPosition = Vector2.zero;
+        divRt.localScale = Vector3.one;
+
+        Image divImg = divRt.GetComponent<Image>();
+        divImg.sprite = null;
+        divImg.color = new Color(1f, 1f, 1f, 0.22f);
+        divImg.raycastTarget = false;
+    }
+
+    void StyleLobbyMoneyTextForChip()
+    {
+        if (moneyText_Cp == null)
+        {
+            return;
+        }
+
+        moneyText_Cp.raycastTarget = false;
+        Outline o = moneyText_Cp.GetComponent<Outline>();
+        if (o == null)
+        {
+            o = moneyText_Cp.gameObject.AddComponent<Outline>();
+        }
+        o.effectColor = new Color(0f, 0f, 0f, 0.55f);
+        o.effectDistance = new Vector2(1.2f, -1.2f);
+        o.useGraphicAlpha = true;
     }
 
     static float MeasureMoneyTextWidthPixels(Text text, RectTransform textRt)
@@ -389,6 +573,7 @@ public class UIManager_Lobby : MonoBehaviour
     void RefreshOpenBillingPlusLayout()
     {
         EnsureOpenBillingPlusReference();
+        EnsureBillingPromoButtonReference();
         if (openBillingPlusButton_RT == null || moneyText_Cp == null)
         {
             return;
@@ -399,33 +584,70 @@ public class UIManager_Lobby : MonoBehaviour
         RectTransform textRt = moneyText_Cp.rectTransform;
         RectTransform moneyPanelRt = textRt.parent as RectTransform;
         AttachOpenBillingButtonToMoneyPanel(moneyPanelRt);
+        if (moneyPanelRt == null)
+        {
+            return;
+        }
+
+        EnsureLobbyUiSlicedSpriteCached();
+        EnsureLobbyMoneyChipBackground(moneyPanelRt);
+        StyleLobbyMoneyTextForChip();
+
+        RectTransform coinRt = moneyPanelRt.Find("Money Image") as RectTransform;
+        Image coinImg = coinRt != null ? coinRt.GetComponent<Image>() : null;
+        if (coinImg != null)
+        {
+            coinImg.raycastTarget = false;
+            coinImg.preserveAspect = true;
+        }
+
+        const float chipHeight = 62f;
+        const float padLeft = 14f;
+        const float padRight = 12f;
+        const float coinSize = 46f;
+        const float gapAfterCoin = 10f;
+        const float gapBeforePlus = 10f;
+        const float plusWidth = 54f;
+        const float plusHeight = 50f;
 
         openBillingPlusButton_RT.anchorMin = new Vector2(0f, 0.5f);
         openBillingPlusButton_RT.anchorMax = new Vector2(0f, 0.5f);
         openBillingPlusButton_RT.pivot = new Vector2(0f, 0.5f);
-        openBillingPlusButton_RT.sizeDelta = new Vector2(44f, 44f);
+        openBillingPlusButton_RT.sizeDelta = new Vector2(plusWidth, plusHeight);
+
+        if (coinRt != null)
+        {
+            coinRt.anchorMin = new Vector2(0f, 0.5f);
+            coinRt.anchorMax = new Vector2(0f, 0.5f);
+            coinRt.pivot = new Vector2(0.5f, 0.5f);
+            coinRt.sizeDelta = new Vector2(coinSize, coinSize);
+            coinRt.anchoredPosition = new Vector2(padLeft + coinSize * 0.5f, 0f);
+        }
+
+        textRt.anchorMin = new Vector2(0f, 0.5f);
+        textRt.anchorMax = new Vector2(0f, 0.5f);
+        textRt.pivot = new Vector2(0f, 0.5f);
+        textRt.anchoredPosition = new Vector2(padLeft + coinSize + gapAfterCoin, 0f);
 
         Canvas.ForceUpdateCanvases();
         float textWidth = MeasureMoneyTextWidthPixels(moneyText_Cp, textRt);
         textWidth = CapMoneyTextWidthEstimate(moneyText_Cp, textWidth);
         if (!float.IsFinite(textWidth) || textWidth < 1f)
         {
-            textWidth = Mathf.Max(120f, moneyText_Cp.preferredWidth);
+            textWidth = Mathf.Max(72f, moneyText_Cp.preferredWidth);
         }
-        const float gap = 8f;
-        float localLeftX = textRt.anchoredPosition.x + textWidth + gap;
-        openBillingPlusButton_RT.anchoredPosition = new Vector2(localLeftX, textRt.anchoredPosition.y);
+        textWidth = Mathf.Max(textWidth, 56f);
+        textRt.sizeDelta = new Vector2(textWidth + 8f, Mathf.Max(44f, textRt.sizeDelta.y));
 
-        if (moneyPanelRt != null)
-        {
-            float needW = localLeftX + openBillingPlusButton_RT.sizeDelta.x + 12f;
-            if (needW > moneyPanelRt.sizeDelta.x)
-            {
-                moneyPanelRt.sizeDelta = new Vector2(needW, moneyPanelRt.sizeDelta.y);
-            }
-        }
+        float plusLeft = padLeft + coinSize + gapAfterCoin + textWidth + gapBeforePlus;
+        openBillingPlusButton_RT.anchoredPosition = new Vector2(plusLeft, 0f);
+
+        float needW = plusLeft + plusWidth + padRight;
+        moneyPanelRt.sizeDelta = new Vector2(needW, chipHeight);
 
         StyleOpenBillingEntryButton();
+        StyleBillingPromoButton();
+        EnsureBillingPlusDivider(openBillingPlusButton_RT);
         EnsureOpenBillingPlusRaycastWorks();
     }
 
@@ -436,42 +658,129 @@ public class UIManager_Lobby : MonoBehaviour
             return;
         }
 
+        EnsureLobbyUiSlicedSpriteCached();
+
         Image bg = openBillingPlusButton_RT.GetComponent<Image>();
         if (bg != null)
         {
-            bg.sprite = null;
-            bg.type = Image.Type.Simple;
-            // Keep tiny alpha so raycast remains reliable while visually transparent.
-            bg.color = new Color(1f, 1f, 1f, 1f / 255f);
+            bg.sprite = _lobbyUiSlicedSpriteCache;
+            bg.type = bg.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
+            bg.preserveAspect = false;
+            bg.color = new Color(0.14f, 0.38f, 0.72f, 0.98f);
         }
 
         Button btn = openBillingPlusButton_RT.GetComponent<Button>();
         if (btn != null)
         {
+            btn.transition = Selectable.Transition.ColorTint;
             ColorBlock cb = btn.colors;
             cb.normalColor = Color.white;
-            cb.highlightedColor = new Color(0.92f, 0.96f, 1f, 1f);
-            cb.pressedColor = new Color(0.78f, 0.88f, 1f, 1f);
+            cb.highlightedColor = new Color(0.94f, 0.97f, 1f, 1f);
+            cb.pressedColor = new Color(0.82f, 0.9f, 1f, 1f);
             cb.selectedColor = cb.highlightedColor;
-            cb.disabledColor = new Color(1f, 1f, 1f, 0.45f);
+            cb.disabledColor = new Color(1f, 1f, 1f, 0.4f);
             cb.colorMultiplier = 1f;
+            cb.fadeDuration = 0.08f;
             btn.colors = cb;
         }
+
+        Outline accentOutline = openBillingPlusButton_RT.GetComponent<Outline>();
+        if (accentOutline == null)
+        {
+            accentOutline = openBillingPlusButton_RT.gameObject.AddComponent<Outline>();
+        }
+        accentOutline.effectColor = new Color(1f, 0.92f, 0.45f, 0.35f);
+        accentOutline.effectDistance = new Vector2(1f, -1f);
+        accentOutline.useGraphicAlpha = true;
 
         Text label = openBillingPlusButton_RT.GetComponentInChildren<Text>(true);
         if (label != null)
         {
             label.text = "+";
-            label.fontSize = 34;
+            label.fontSize = 36;
             label.fontStyle = FontStyle.Bold;
             label.alignment = TextAnchor.MiddleCenter;
-            label.color = moneyText_Cp != null ? moneyText_Cp.color : new Color(1f, 0.9f, 0.2f, 1f);
+            label.color = new Color(1f, 0.98f, 0.88f, 1f);
             RectTransform labelRt = label.rectTransform;
             labelRt.anchorMin = Vector2.zero;
             labelRt.anchorMax = Vector2.one;
-            labelRt.offsetMin = Vector2.zero;
+            labelRt.pivot = new Vector2(0.5f, 0.5f);
+            labelRt.offsetMin = new Vector2(5f, 0f);
             labelRt.offsetMax = Vector2.zero;
+
+            Outline labelOl = label.GetComponent<Outline>();
+            if (labelOl == null)
+            {
+                labelOl = label.gameObject.AddComponent<Outline>();
+            }
+            labelOl.effectColor = new Color(0f, 0f, 0f, 0.45f);
+            labelOl.effectDistance = new Vector2(1f, -1f);
+            labelOl.useGraphicAlpha = true;
         }
+    }
+
+    void StyleBillingPromoButton()
+    {
+        if (billingPromoButton_RT == null)
+        {
+            return;
+        }
+
+        // Hide the extra lobby title banner; user requested title only inside billing page.
+        billingPromoButton_RT.gameObject.SetActive(false);
+        return;
+
+        billingPromoButton_RT.anchorMin = new Vector2(0f, 1f);
+        billingPromoButton_RT.anchorMax = new Vector2(0f, 1f);
+        billingPromoButton_RT.pivot = new Vector2(0f, 1f);
+        billingPromoButton_RT.anchoredPosition = new Vector2(12f, -66f);
+        billingPromoButton_RT.sizeDelta = new Vector2(430f, 44f);
+        billingPromoButton_RT.SetAsLastSibling();
+
+        Image bg = billingPromoButton_RT.GetComponent<Image>();
+        if (bg != null)
+        {
+            bg.sprite = null;
+            bg.type = Image.Type.Simple;
+            bg.color = new Color(0.1f, 0.55f, 0.95f, 0.92f);
+            bg.raycastTarget = true;
+        }
+
+        Button btn = billingPromoButton_RT.GetComponent<Button>();
+        if (btn != null)
+        {
+            ColorBlock cb = btn.colors;
+            cb.normalColor = Color.white;
+            cb.highlightedColor = new Color(0.88f, 0.95f, 1f, 1f);
+            cb.pressedColor = new Color(0.78f, 0.88f, 1f, 1f);
+            cb.selectedColor = cb.highlightedColor;
+            cb.disabledColor = new Color(1f, 1f, 1f, 0.45f);
+            cb.colorMultiplier = 1f;
+            btn.colors = cb;
+            btn.targetGraphic = bg;
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(OnClick_OpenBillingPanelBtn);
+        }
+
+        Text label = billingPromoButton_RT.GetComponentInChildren<Text>(true);
+        if (label == null)
+        {
+            return;
+        }
+        label.text = "有料アイテムゲットで的中率アップ";
+        label.font = moneyText_Cp != null && moneyText_Cp.font != null
+            ? moneyText_Cp.font
+            : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        label.fontSize = 23;
+        label.fontStyle = FontStyle.Bold;
+        label.alignment = TextAnchor.MiddleCenter;
+        label.color = Color.white;
+        label.raycastTarget = true;
+        RectTransform labelRt = label.rectTransform;
+        labelRt.anchorMin = Vector2.zero;
+        labelRt.anchorMax = Vector2.one;
+        labelRt.offsetMin = Vector2.zero;
+        labelRt.offsetMax = Vector2.zero;
     }
 
     void RefreshResponsiveLayout()
@@ -627,7 +936,8 @@ public class UIManager_Lobby : MonoBehaviour
         Image backdrop = root.Find("Billing Backdrop")?.GetComponent<Image>();
         if (backdrop != null)
         {
-            backdrop.color = new Color(0.66f, 0.9f, 0.95f, 0.38f);
+            // Opaque enough that lobby UI (e.g. Middle Panel) does not bleed through.
+            backdrop.color = new Color(0.04f, 0.06f, 0.1f, 0.9f);
         }
 
         RectTransform content = root.Find("Billing Content") as RectTransform;
@@ -647,7 +957,7 @@ public class UIManager_Lobby : MonoBehaviour
         Image panelBg = content.GetComponent<Image>();
         if (panelBg != null)
         {
-            panelBg.color = new Color(0.68f, 0.9f, 0.96f, 0.66f);
+            panelBg.color = new Color(0.72f, 0.92f, 0.98f, 0.97f);
             if (panelBg.sprite != null)
             {
                 panelBg.type = Image.Type.Sliced;
@@ -663,34 +973,62 @@ public class UIManager_Lobby : MonoBehaviour
         panelShadow.effectDistance = new Vector2(0f, -8f);
         panelShadow.useGraphicAlpha = true;
 
-        LayoutBillingTopBar(content, "Billing Title Text", new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(0f, 1f), new Vector2(102f, -26f), new Vector2(320f, 60f));
+        RectTransform titleRt = content.Find("Billing Title Text") as RectTransform;
+        if (titleRt != null)
+        {
+            titleRt.anchorMin = new Vector2(0.5f, 1f);
+            titleRt.anchorMax = new Vector2(0.5f, 1f);
+            titleRt.pivot = new Vector2(0.5f, 1f);
+            titleRt.anchoredPosition = new Vector2(0f, -30f);
+            float titleWidth = Mathf.Max(280f, content.sizeDelta.x - 56f);
+            titleRt.sizeDelta = new Vector2(titleWidth, 52f);
+        }
+
         Text titleTxt = content.Find("Billing Title Text")?.GetComponent<Text>();
         if (titleTxt != null)
         {
-            titleTxt.text = gameData.money.ToString("N0", CultureInfo.InvariantCulture);
-            titleTxt.color = new Color(0.99f, 0.9f, 0.16f, 1f);
+            titleTxt.gameObject.SetActive(true);
+            titleTxt.text = "有料アイテムゲットで的中率アップ";
+            titleTxt.color = Color.white;
             titleTxt.fontSize = 34;
-            titleTxt.fontStyle = FontStyle.Bold;
-            titleTxt.alignment = TextAnchor.MiddleLeft;
+            titleTxt.fontStyle = FontStyle.Normal;
+            titleTxt.alignment = TextAnchor.MiddleCenter;
+            titleTxt.horizontalOverflow = HorizontalWrapMode.Wrap;
+            titleTxt.verticalOverflow = VerticalWrapMode.Overflow;
             titleTxt.raycastTarget = false;
         }
 
-        LayoutBillingTopBar(content, "Billing Hint Text", new Vector2(0f, 1f), new Vector2(1f, 1f),
-            new Vector2(0f, 1f), new Vector2(118f, -102f), new Vector2(420f, 36f));
+        const float moneyRowCenterY = -96f;
+        RectTransform hintRt = content.Find("Billing Hint Text") as RectTransform;
+        if (hintRt != null)
+        {
+            hintRt.anchorMin = new Vector2(0f, 1f);
+            hintRt.anchorMax = new Vector2(0f, 1f);
+            hintRt.pivot = new Vector2(0f, 0.5f);
+            float coinSlot = 52f;
+            float gap = 10f;
+            hintRt.anchoredPosition = new Vector2(40f + coinSlot + gap, moneyRowCenterY);
+            hintRt.sizeDelta = new Vector2(420f, 56f);
+        }
+
         Text hintTxt = content.Find("Billing Hint Text")?.GetComponent<Text>();
         if (hintTxt != null)
         {
-            hintTxt.text = string.Empty;
-            hintTxt.gameObject.SetActive(false);
+            hintTxt.gameObject.SetActive(true);
+            hintTxt.text = gameData.money.ToString("N0", CultureInfo.InvariantCulture);
+            hintTxt.fontSize = 40;
+            hintTxt.fontStyle = FontStyle.Bold;
+            hintTxt.alignment = TextAnchor.MiddleLeft;
+            hintTxt.color = new Color(0.99f, 0.9f, 0.16f, 1f);
+            hintTxt.raycastTarget = false;
         }
 
-        EnsureBillingHeaderCoin(content);
+        EnsureBillingHeaderCoin(content, moneyRowCenterY);
 
         const float cellW = 640f;
         const float cellH = 78f;
         const float gapY = 18f;
-        const float listTopY = -182f;
+        const float listTopY = -200f;
         for (int i = 0; i < BillingIapButtonNames.Length; i++)
         {
             float y = listTopY - i * (cellH + gapY);
@@ -723,7 +1061,54 @@ public class UIManager_Lobby : MonoBehaviour
 
         RefreshBillingPackButtonLabels();
 
+        ReorderBillingContentForCorrectOverlay(content);
+
         Canvas.ForceUpdateCanvases();
+    }
+
+    /// <summary>
+    /// IAP row buttons use an opaque Image; they must render below the title and balance row.
+    /// </summary>
+    static void ReorderBillingContentForCorrectOverlay(RectTransform content)
+    {
+        if (content == null)
+        {
+            return;
+        }
+
+        int idx = 0;
+        for (int i = 0; i < BillingIapButtonNames.Length; i++)
+        {
+            Transform row = content.Find(BillingIapButtonNames[i]);
+            if (row != null)
+            {
+                row.SetSiblingIndex(idx++);
+            }
+        }
+
+        Transform title = content.Find("Billing Title Text");
+        if (title != null)
+        {
+            title.SetSiblingIndex(idx++);
+        }
+
+        Transform coin = content.Find("Billing Header Coin");
+        if (coin != null)
+        {
+            coin.SetSiblingIndex(idx++);
+        }
+
+        Transform hint = content.Find("Billing Hint Text");
+        if (hint != null)
+        {
+            hint.SetSiblingIndex(idx++);
+        }
+
+        Transform close = content.Find("Billing Close Button");
+        if (close != null)
+        {
+            close.SetSiblingIndex(idx++);
+        }
     }
 
     void NormalizeBillingPurchaseButtons(RectTransform content)
@@ -739,7 +1124,7 @@ public class UIManager_Lobby : MonoBehaviour
         foreach (Transform child in content)
         {
             if (child == null || child.name == "Billing Title Text" || child.name == "Billing Hint Text" ||
-                child.name == "Billing Close Button")
+                child.name == "Billing Close Button" || child.name == "Billing Header Coin")
             {
                 continue;
             }
@@ -932,7 +1317,7 @@ public class UIManager_Lobby : MonoBehaviour
         if (billingPackXLargeSprite == null) billingPackXLargeSprite = billingPackLargeSprite;
     }
 
-    void EnsureBillingHeaderCoin(RectTransform content)
+    void EnsureBillingHeaderCoin(RectTransform content, float moneyRowCenterYFromTop)
     {
         RectTransform iconRt = content.Find("Billing Header Coin") as RectTransform;
         if (iconRt == null)
@@ -945,8 +1330,9 @@ public class UIManager_Lobby : MonoBehaviour
         iconRt.anchorMin = new Vector2(0f, 1f);
         iconRt.anchorMax = new Vector2(0f, 1f);
         iconRt.pivot = new Vector2(0.5f, 0.5f);
-        iconRt.anchoredPosition = new Vector2(56f, -56f);
-        iconRt.sizeDelta = new Vector2(60f, 60f);
+        float coinCenterX = 40f + 26f;
+        iconRt.anchoredPosition = new Vector2(coinCenterX, moneyRowCenterYFromTop);
+        iconRt.sizeDelta = new Vector2(52f, 52f);
 
         Image iconImg = iconRt.GetComponent<Image>();
         iconImg.sprite = billingCoinSprite;
@@ -1008,7 +1394,7 @@ public class UIManager_Lobby : MonoBehaviour
         iconRt.anchorMin = new Vector2(0f, 0.5f);
         iconRt.anchorMax = new Vector2(0f, 0.5f);
         iconRt.pivot = new Vector2(0.5f, 0.5f);
-        iconRt.anchoredPosition = new Vector2(34f, 0f);
+        iconRt.anchoredPosition = new Vector2(34f, -3f);
         iconRt.sizeDelta = new Vector2(54f, 54f);
         iconImg.sprite = GetBillingPackSprite(catalogIndex);
         if (iconImg.sprite != null)
@@ -1046,7 +1432,7 @@ public class UIManager_Lobby : MonoBehaviour
         amountText.rectTransform.anchorMin = new Vector2(0f, 0f);
         amountText.rectTransform.anchorMax = new Vector2(0f, 1f);
         amountText.rectTransform.pivot = new Vector2(0f, 0.5f);
-        amountText.rectTransform.anchoredPosition = new Vector2(76f, 0f);
+        amountText.rectTransform.anchoredPosition = new Vector2(76f, -3f);
         amountText.rectTransform.sizeDelta = new Vector2(184f, 56f);
         amountText.alignment = TextAnchor.MiddleLeft;
         amountText.fontSize = 24;
@@ -1221,6 +1607,12 @@ public class UIManager_Lobby : MonoBehaviour
     {
         if (billingPanel_GO != null)
         {
+            EnsureLobbyMiddlePanelWhileBillingRef();
+            if (lobbyMiddlePanelWhileBilling_GO != null)
+            {
+                lobbyMiddlePanelWhileBilling_GO.SetActive(false);
+            }
+
             ApplyBillingPanelLayoutAndStyle();
             billingPanel_GO.SetActive(true);
         }
@@ -1231,6 +1623,11 @@ public class UIManager_Lobby : MonoBehaviour
         if (billingPanel_GO != null)
         {
             billingPanel_GO.SetActive(false);
+        }
+
+        if (lobbyMiddlePanelWhileBilling_GO != null)
+        {
+            lobbyMiddlePanelWhileBilling_GO.SetActive(true);
         }
     }
 

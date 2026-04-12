@@ -1663,6 +1663,7 @@ MonoBehaviour:
   bettingButton_Cp: {fileID: 562654840}
   deliveringButton_Cp: {fileID: 1191734488}
   minBettingMoneyText_Cp: {fileID: 1342988818}
+  lobbyMiddlePanelWhileBilling_GO: {fileID: 1472348828}
   billingPanel_GO: {fileID: 2100005020}
   openBillingPlusButton_RT: {fileID: 2100005101}
   actionButtonsPanel_RT: {fileID: 2120524713}
