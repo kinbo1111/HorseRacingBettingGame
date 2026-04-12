@@ -138,8 +138,8 @@ namespace DigitalRuby.WeatherMaker
 
         private void UpdateShader()
         {
-            if (WeatherMakerScript.Instance == null || WeatherMakerScript.Instance.PerformanceProfile == null ||
-                WeatherMakerLightManagerScript.Instance == null || WaterProfile == null || MeshRenderer.sharedMaterial == null)
+            if (!WeatherMakerScript.HasInstance() || WeatherMakerScript.Instance.PerformanceProfile == null ||
+                !WeatherMakerLightManagerScript.HasInstance() || WaterProfile == null || MeshRenderer.sharedMaterial == null)
             {
                 return;
             }

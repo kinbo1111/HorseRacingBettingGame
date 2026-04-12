@@ -75,21 +75,21 @@ public class UIManager_DeliverEvaluation : MonoBehaviour
     {
         set
         {
-            coinText_Cp.text = value.ToString() + "円";
+            coinText_Cp.text = value.ToString();
         }
     }
     public int bonus
     {
         set
         {
-            bonusText_Cp.text = value.ToString() + "円";
+            bonusText_Cp.text = value.ToString();
         }
     }
     public int totalMoney
     {
         set
         {
-            totalMoneyText_Cp.text = value.ToString() + "円";
+            totalMoneyText_Cp.text = value.ToString();
         }
     }
 
