@@ -329,7 +329,7 @@ public class UIManager_Ending : MonoBehaviour
     // Set final money display
     public void SetFinalMoney(int money)
     {
-        string txt = money.ToString("N0") + "円";
+        string txt = money.ToString("N0");
         if (finalMoneyText_Cp != null)
         {
             finalMoneyText_Cp.text = txt;
