@@ -67,14 +67,14 @@ public class UIManager_BetEvaluation : MonoBehaviour
     {
         set
         {
-            bettingMoneyText_Cp.text = value.ToString() + "円";
+            bettingMoneyText_Cp.text = value.ToString();
         }
     }
     public int totalMoney
     {
         set
         {
-            totalMoneyText_Cp.text = value.ToString() + "円";
+            totalMoneyText_Cp.text = value.ToString();
         }
     }
 

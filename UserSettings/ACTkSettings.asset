@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 04905b38ab174522a78ec941de8ba4ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  skipProGuardNotice: 0
+  skipProGuardNotice: 1
   <Version>k__BackingField: 2021.6.4

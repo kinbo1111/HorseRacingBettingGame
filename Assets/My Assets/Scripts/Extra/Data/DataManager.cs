@@ -369,6 +369,19 @@ public class DataManager : MonoBehaviour
         ObscuredPrefs.Save();
     }
 
+    /// <summary>Add purchased in-game currency to the saved wallet.</summary>
+    public void AddMoneyFromPurchase(int amountYen)
+    {
+        if (amountYen <= 0)
+        {
+            return;
+        }
+        GameData_St gd = gameData;
+        gd.money += amountYen;
+        gameData = gd;
+        SaveGameData();
+    }
+
     public void DeleteGameData()
     {
         ObscuredPrefs.DeleteAll();

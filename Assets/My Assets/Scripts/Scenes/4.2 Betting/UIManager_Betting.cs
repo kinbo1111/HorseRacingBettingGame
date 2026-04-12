@@ -64,7 +64,7 @@ public class UIManager_Betting : MonoBehaviour
     }
     public int bettingMoney
     {
-        set { bettingMoneyText_Cp.text = value.ToString() + "円"; }
+        set { bettingMoneyText_Cp.text = value.ToString(); }
     }
 
     //-------------------------------------------------- private properties
