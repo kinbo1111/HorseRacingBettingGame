@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 public class ResolutionHandler : MonoBehaviour
 {
+    const string LetterboxClearCameraName = "Letterbox Clear Camera";
+
     [SerializeField]
     int targetWidth = 1920, targetHeight = 1080;
 
@@ -47,11 +49,80 @@ public class ResolutionHandler : MonoBehaviour
             camRect.y = (1f - displayVStargetRatio) / 2f;
         }
 
+        Camera clearCam = EnsureLetterboxClearCamera();
+        clearCam.rect = new Rect(0f, 0f, 1f, 1f);
+
         List<Camera> allCam_Cps = new List<Camera>(FindObjectsOfType<Camera>());
+        float minOtherDepth = 0f;
+        bool anyOther = false;
         for (int i = 0; i < allCam_Cps.Count; i++)
         {
-            allCam_Cps[i].rect = camRect;
+            Camera c = allCam_Cps[i];
+            if (c == null || c == clearCam)
+            {
+                continue;
+            }
+            if (!anyOther || c.depth < minOtherDepth)
+            {
+                minOtherDepth = c.depth;
+                anyOther = true;
+            }
+            c.rect = camRect;
         }
+
+        clearCam.depth = anyOther ? minOtherDepth - 1f : -2f;
+    }
+
+    /// <summary>
+    /// Letterboxed game cameras only clear their viewport; side strips keep stale pixels ("burn-in").
+    /// This camera draws nothing but solid black across the full window first each frame.
+    /// </summary>
+    static Camera EnsureLetterboxClearCamera()
+    {
+        Camera kept = null;
+        Camera[] found = FindObjectsOfType<Camera>();
+        for (int i = 0; i < found.Length; i++)
+        {
+            Camera c = found[i];
+            if (c == null || c.gameObject.name != LetterboxClearCameraName)
+            {
+                continue;
+            }
+            if (kept == null)
+            {
+                kept = c;
+            }
+            else
+            {
+                Destroy(c.gameObject);
+            }
+        }
+
+        if (kept != null)
+        {
+            ConfigureLetterboxClearCamera(kept);
+            return kept;
+        }
+
+        GameObject go = new GameObject(LetterboxClearCameraName);
+        Camera cam = go.AddComponent<Camera>();
+        ConfigureLetterboxClearCamera(cam);
+        return cam;
+    }
+
+    static void ConfigureLetterboxClearCamera(Camera cam)
+    {
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = Color.black;
+        cam.cullingMask = 0;
+        cam.useOcclusionCulling = false;
+        cam.allowHDR = false;
+        cam.allowMSAA = false;
+        cam.orthographic = true;
+        cam.orthographicSize = 1f;
+        cam.nearClipPlane = 0.3f;
+        cam.farClipPlane = 1000f;
+        cam.enabled = true;
     }
 
     void AdjustCanvas()

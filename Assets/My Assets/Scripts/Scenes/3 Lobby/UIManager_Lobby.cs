@@ -66,6 +66,7 @@ public class UIManager_Lobby : MonoBehaviour
     };
     const string BillingPromoButtonName = "Open Billing Promo Button";
     const string LobbyMoneyChipBgName = "Lobby Money Chip Bg";
+    const string LobbyMoneyBillingTapName = "Lobby Money Billing Tap";
 
     Sprite _lobbyUiSlicedSpriteCache;
 
@@ -499,6 +500,58 @@ public class UIManager_Lobby : MonoBehaviour
         shadow.useGraphicAlpha = true;
     }
 
+    /// <summary>
+    /// Coin + amount had raycast off, so taps missed; this strip opens billing like the + control.
+    /// </summary>
+    void EnsureOpenBillingMoneyTapArea(RectTransform moneyPanelRt, float widthPx, float chipHeightPx)
+    {
+        if (moneyPanelRt == null || widthPx < 1f)
+        {
+            return;
+        }
+
+        EnsureLobbyUiSlicedSpriteCached();
+
+        RectTransform tapRt = moneyPanelRt.Find(LobbyMoneyBillingTapName) as RectTransform;
+        if (tapRt == null)
+        {
+            GameObject go = new GameObject(LobbyMoneyBillingTapName, typeof(RectTransform), typeof(Image), typeof(Button));
+            tapRt = go.GetComponent<RectTransform>();
+            tapRt.SetParent(moneyPanelRt, false);
+        }
+
+        int bgIndex = -1;
+        for (int i = 0; i < moneyPanelRt.childCount; i++)
+        {
+            if (moneyPanelRt.GetChild(i).name == LobbyMoneyChipBgName)
+            {
+                bgIndex = i;
+                break;
+            }
+        }
+        tapRt.SetSiblingIndex(bgIndex >= 0 ? bgIndex + 1 : 0);
+
+        tapRt.anchorMin = new Vector2(0f, 0.5f);
+        tapRt.anchorMax = new Vector2(0f, 0.5f);
+        tapRt.pivot = new Vector2(0f, 0.5f);
+        tapRt.sizeDelta = new Vector2(widthPx, chipHeightPx);
+        tapRt.anchoredPosition = Vector2.zero;
+        tapRt.localScale = Vector3.one;
+
+        Image tapImg = tapRt.GetComponent<Image>();
+        tapImg.sprite = _lobbyUiSlicedSpriteCache;
+        tapImg.type = tapImg.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
+        tapImg.color = new Color(1f, 1f, 1f, 0.02f);
+        tapImg.raycastTarget = true;
+        tapImg.canvasRenderer.cullTransparentMesh = false;
+
+        Button tapBtn = tapRt.GetComponent<Button>();
+        tapBtn.transition = Selectable.Transition.None;
+        tapBtn.targetGraphic = tapImg;
+        tapBtn.onClick.RemoveAllListeners();
+        tapBtn.onClick.AddListener(OnClick_OpenBillingPanelBtn);
+    }
+
     static void EnsureBillingPlusDivider(RectTransform plusButtonRt)
     {
         if (plusButtonRt == null)
@@ -545,6 +598,7 @@ public class UIManager_Lobby : MonoBehaviour
         o.effectColor = new Color(0f, 0f, 0f, 0.55f);
         o.effectDistance = new Vector2(1.2f, -1.2f);
         o.useGraphicAlpha = true;
+        moneyText_Cp.fontSize = Mathf.Max(moneyText_Cp.fontSize, 48);
     }
 
     static float MeasureMoneyTextWidthPixels(Text text, RectTransform textRt)
@@ -601,14 +655,14 @@ public class UIManager_Lobby : MonoBehaviour
             coinImg.preserveAspect = true;
         }
 
-        const float chipHeight = 62f;
-        const float padLeft = 14f;
-        const float padRight = 12f;
-        const float coinSize = 46f;
-        const float gapAfterCoin = 10f;
-        const float gapBeforePlus = 10f;
-        const float plusWidth = 54f;
-        const float plusHeight = 50f;
+        const float chipHeight = 86f;
+        const float padLeft = 18f;
+        const float padRight = 16f;
+        const float coinSize = 56f;
+        const float gapAfterCoin = 12f;
+        const float gapBeforePlus = 14f;
+        const float plusWidth = 78f;
+        const float plusHeight = 72f;
 
         openBillingPlusButton_RT.anchorMin = new Vector2(0f, 0.5f);
         openBillingPlusButton_RT.anchorMax = new Vector2(0f, 0.5f);
@@ -636,8 +690,8 @@ public class UIManager_Lobby : MonoBehaviour
         {
             textWidth = Mathf.Max(72f, moneyText_Cp.preferredWidth);
         }
-        textWidth = Mathf.Max(textWidth, 56f);
-        textRt.sizeDelta = new Vector2(textWidth + 8f, Mathf.Max(44f, textRt.sizeDelta.y));
+        textWidth = Mathf.Max(textWidth, 68f);
+        textRt.sizeDelta = new Vector2(textWidth + 8f, Mathf.Max(58f, textRt.sizeDelta.y));
 
         float plusLeft = padLeft + coinSize + gapAfterCoin + textWidth + gapBeforePlus;
         openBillingPlusButton_RT.anchoredPosition = new Vector2(plusLeft, 0f);
@@ -645,6 +699,7 @@ public class UIManager_Lobby : MonoBehaviour
         float needW = plusLeft + plusWidth + padRight;
         moneyPanelRt.sizeDelta = new Vector2(needW, chipHeight);
 
+        EnsureOpenBillingMoneyTapArea(moneyPanelRt, plusLeft, chipHeight);
         StyleOpenBillingEntryButton();
         StyleBillingPromoButton();
         EnsureBillingPlusDivider(openBillingPlusButton_RT);
@@ -667,6 +722,8 @@ public class UIManager_Lobby : MonoBehaviour
             bg.type = bg.sprite != null ? Image.Type.Sliced : Image.Type.Simple;
             bg.preserveAspect = false;
             bg.color = new Color(0.14f, 0.38f, 0.72f, 0.98f);
+            // Widen touch target on phones without changing the visible rect (Material Design ~48dp).
+            bg.raycastPadding = new Vector4(16f, 14f, 16f, 14f);
         }
 
         Button btn = openBillingPlusButton_RT.GetComponent<Button>();
@@ -697,7 +754,7 @@ public class UIManager_Lobby : MonoBehaviour
         if (label != null)
         {
             label.text = "+";
-            label.fontSize = 36;
+            label.fontSize = 46;
             label.fontStyle = FontStyle.Bold;
             label.alignment = TextAnchor.MiddleCenter;
             label.color = new Color(1f, 0.98f, 0.88f, 1f);

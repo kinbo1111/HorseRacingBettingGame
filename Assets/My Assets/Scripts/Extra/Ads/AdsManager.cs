@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.Video;
 
 public class AdsManager : MonoBehaviour
@@ -45,6 +46,8 @@ public class AdsManager : MonoBehaviour
     AssetsLoader assetsLoader_Cp;
 
     bool presentAds, presentVideo;
+    string currentVideoClickUrl = string.Empty;
+    Collider adsVideoCollider_Cp;
 
     #endregion
 
@@ -71,6 +74,10 @@ public class AdsManager : MonoBehaviour
     {
         get { return assetsLoader_Cp.downloadedVideoPaths; }
     }
+    List<string> videoClickUrls
+    {
+        get { return assetsLoader_Cp.downloadedVideoClickUrls; }
+    }
     
     #endregion
 
@@ -96,7 +103,7 @@ public class AdsManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        TryHandleAdsVideoClick();
     }
 
     //////////////////////////////////////////////////////////////////////
@@ -204,6 +211,11 @@ public class AdsManager : MonoBehaviour
         if (dataManager_Cp.assetsLoader_Cp == null)
         {
             assetsLoader_Cp = dataManager_Cp.gameObject.AddComponent<AssetsLoader>();
+            dataManager_Cp.assetsLoader_Cp = assetsLoader_Cp;
+        }
+        else
+        {
+            assetsLoader_Cp = dataManager_Cp.assetsLoader_Cp;
         }
     }
 
@@ -212,6 +224,12 @@ public class AdsManager : MonoBehaviour
         adsTextureRenderer_Cp.enabled = false;
         adsVideoRenderer_Cp.enabled = false;
         adsCancelBtn_GO.SetActive(false);
+
+        adsVideoCollider_Cp = adsVideoRenderer_Cp.GetComponent<Collider>();
+        if (adsVideoCollider_Cp == null)
+        {
+            adsVideoCollider_Cp = adsVideoRenderer_Cp.gameObject.AddComponent<BoxCollider>();
+        }
     }
 
     #endregion
@@ -267,15 +285,19 @@ public class AdsManager : MonoBehaviour
 
     void PlayVideo()
     {
+        int randomId = Random.Range(0, videoPlayUrls.Count);
+
         videoPlayer_Cp.source = VideoSource.Url;
-        videoPlayer_Cp.url = videoPlayUrls[Random.Range(0, videoPlayUrls.Count)];
+        videoPlayer_Cp.url = videoPlayUrls[randomId];
         videoPlayer_Cp.isLooping = true;
+        currentVideoClickUrl = randomId < videoClickUrls.Count ? videoClickUrls[randomId] : string.Empty;
         videoPlayer_Cp.Prepare();
         videoPlayer_Cp.prepareCompleted += VideoPlayer_prepareCompleted;
     }
 
     void Test_PlayVideo()
     {
+        currentVideoClickUrl = string.Empty;
         testVideoPlayer_Cp.isLooping = true;
         testVideoPlayer_Cp.Prepare();
         testVideoPlayer_Cp.prepareCompleted += VideoPlayer_prepareCompleted;
@@ -296,8 +318,42 @@ public class AdsManager : MonoBehaviour
         adsVideoRenderer_Cp.enabled = false;
         videoPlayer_Cp.Stop();
         adsCancelBtn_GO.SetActive(false);
+        currentVideoClickUrl = string.Empty;
 
         onAdsVideoStop.Invoke();
+    }
+
+    void TryHandleAdsVideoClick()
+    {
+        if (!adsVideoRenderer_Cp.enabled || string.IsNullOrEmpty(currentVideoClickUrl))
+        {
+            return;
+        }
+
+        if (!Input.GetMouseButtonDown(0))
+        {
+            return;
+        }
+
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        {
+            return;
+        }
+
+        Camera cam = Camera.main;
+        if (cam == null)
+        {
+            return;
+        }
+
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hitInfo))
+        {
+            if (hitInfo.collider == adsVideoCollider_Cp)
+            {
+                Application.OpenURL(currentVideoClickUrl);
+            }
+        }
     }
 
     public void OnClick_CancelAdsBtn()
