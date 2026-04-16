@@ -1242,7 +1242,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "\u30D9\u30C3\u30C8\u6210\u529F\u56DE\u6570"
+  m_Text: "\u99AC\u5238\u6295\u7968\u6210\u529F\u56DE\u6570"
 --- !u!222 &429838306
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1511,7 +1511,7 @@ PrefabInstance:
     - target: {fileID: 8088847015734648347, guid: 849e110f3c9e2394187167ba7c2236bd,
         type: 3}
       propertyPath: m_Text
-      value: "\u30D9\u30C3\u30C8"
+      value: "\u99AC\u5238\u6295\u7968"
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1880,7 +1880,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "\u7DCF\u30D9\u30C3\u30C8\u6570"
+  m_Text: "\u7DCF\u99AC\u5238\u6295\u7968\u6570"
 --- !u!222 &722077327
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2674,7 +2674,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "\u6700\u5C0F\u30D9\u30C3\u30C8\u984D"
+  m_Text: "\u6700\u5C0F\u99AC\u5238\u6295\u7968\u984D"
 --- !u!222 &1218948511
 CanvasRenderer:
   m_ObjectHideFlags: 0

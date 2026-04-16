@@ -36,7 +36,7 @@ public class UIManager_Lobby : MonoBehaviour
     [SerializeField] Text totalBettingCountText_Cp, successBettingCountText_Cp;
     [SerializeField] Button bettingButton_Cp, deliveringButton_Cp;
     [SerializeField] Text minBettingMoneyText_Cp;
-    /// <summary>Lobby Middle Panel (最小ベット額 etc.); hidden while billing is open so it does not show through the modal.</summary>
+    /// <summary>Lobby Middle Panel (最小馬券投票額 etc.); hidden while billing is open so it does not show through the modal.</summary>
     [SerializeField] GameObject lobbyMiddlePanelWhileBilling_GO;
     [SerializeField] GameObject billingPanel_GO;
     [SerializeField] RectTransform openBillingPlusButton_RT;
@@ -115,7 +115,11 @@ public class UIManager_Lobby : MonoBehaviour
     }
     public int minBettingMoney
     {
-        set { minBettingMoneyText_Cp.text = value.ToString(); }
+        set
+        {
+            minBettingMoneyText_Cp.text = value.ToString();
+            RefreshMinBettingPanelLayout();
+        }
     }
 
     //-------------------------------------------------- private properties
@@ -321,6 +325,84 @@ public class UIManager_Lobby : MonoBehaviour
         if (middle != null)
         {
             lobbyMiddlePanelWhileBilling_GO = middle.gameObject;
+        }
+    }
+
+    void RefreshMinBettingPanelLayout()
+    {
+        EnsureLobbyMiddlePanelWhileBillingRef();
+        if (lobbyMiddlePanelWhileBilling_GO == null)
+        {
+            return;
+        }
+
+        RectTransform middleRt = lobbyMiddlePanelWhileBilling_GO.GetComponent<RectTransform>();
+        if (middleRt == null)
+        {
+            return;
+        }
+
+        RectTransform bgRt = middleRt.Find("Bgd Image") as RectTransform;
+        RectTransform titleRt = middleRt.Find("MinBettingMoneyTitle Text") as RectTransform;
+        RectTransform valueRt = minBettingMoneyText_Cp != null ? minBettingMoneyText_Cp.rectTransform : null;
+        if (titleRt == null || valueRt == null)
+        {
+            return;
+        }
+
+        Text titleText = titleRt.GetComponent<Text>();
+        Text valueText = valueRt.GetComponent<Text>();
+
+        const float outerPad = 28f;
+        const float gap = 18f;
+        const float minTitleWidth = 220f;
+        const float minValueWidth = 130f;
+        const float panelHeight = 150f;
+
+        float titlePreferred = titleText != null ? Mathf.Max(minTitleWidth, titleText.preferredWidth + 6f) : minTitleWidth;
+        float valuePreferred = valueText != null ? Mathf.Max(minValueWidth, valueText.preferredWidth + 6f) : minValueWidth;
+
+        float contentWidth = titlePreferred + gap + valuePreferred;
+        float available = Mathf.Max(420f, middleRt.rect.width - 44f);
+        float panelWidth = Mathf.Clamp(contentWidth + outerPad * 2f, 420f, available);
+
+        if (bgRt != null)
+        {
+            bgRt.anchorMin = new Vector2(0.5f, 0.5f);
+            bgRt.anchorMax = new Vector2(0.5f, 0.5f);
+            bgRt.pivot = new Vector2(0.5f, 0.5f);
+            bgRt.anchoredPosition = Vector2.zero;
+            bgRt.sizeDelta = new Vector2(panelWidth, panelHeight);
+        }
+
+        float freeForTexts = Mathf.Max(260f, panelWidth - outerPad * 2f);
+        float ratio = contentWidth > 0.001f ? Mathf.Min(1f, freeForTexts / contentWidth) : 1f;
+        float titleW = titlePreferred * ratio;
+        float valueW = valuePreferred * ratio;
+        float rowW = titleW + gap + valueW;
+        float left = -rowW * 0.5f;
+
+        titleRt.anchorMin = new Vector2(0.5f, 0.5f);
+        titleRt.anchorMax = new Vector2(0.5f, 0.5f);
+        titleRt.pivot = new Vector2(0.5f, 0.5f);
+        titleRt.sizeDelta = new Vector2(titleW, titleRt.sizeDelta.y);
+        titleRt.anchoredPosition = new Vector2(left + titleW * 0.5f, 0f);
+
+        valueRt.anchorMin = new Vector2(0.5f, 0.5f);
+        valueRt.anchorMax = new Vector2(0.5f, 0.5f);
+        valueRt.pivot = new Vector2(0.5f, 0.5f);
+        valueRt.sizeDelta = new Vector2(valueW, valueRt.sizeDelta.y);
+        valueRt.anchoredPosition = new Vector2(left + titleW + gap + valueW * 0.5f, 0f);
+
+        if (titleText != null)
+        {
+            titleText.alignment = TextAnchor.MiddleRight;
+            titleText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        }
+        if (valueText != null)
+        {
+            valueText.alignment = TextAnchor.MiddleLeft;
+            valueText.horizontalOverflow = HorizontalWrapMode.Overflow;
         }
     }
 
@@ -844,6 +926,7 @@ public class UIManager_Lobby : MonoBehaviour
     {
         RefreshActionButtonsLayout();
         RefreshOpenBillingPlusLayout();
+        RefreshMinBettingPanelLayout();
     }
 
     void RefreshActionButtonsLayout()
