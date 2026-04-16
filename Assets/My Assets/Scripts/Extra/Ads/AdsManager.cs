@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.EventSystems;
 using UnityEngine.Video;
 
 public class AdsManager : MonoBehaviour
@@ -100,7 +99,6 @@ public class AdsManager : MonoBehaviour
 
     }
 
-    // Update is called once per frame
     void Update()
     {
         TryHandleAdsVideoClick();
@@ -323,6 +321,49 @@ public class AdsManager : MonoBehaviour
         onAdsVideoStop.Invoke();
     }
 
+    bool IsScreenPointOverActiveAdsCancelButton(Vector2 screenPoint)
+    {
+        if (adsCancelBtn_GO == null || !adsCancelBtn_GO.activeInHierarchy)
+        {
+            return false;
+        }
+
+        var rect = adsCancelBtn_GO.transform as RectTransform;
+        if (rect == null)
+        {
+            return false;
+        }
+
+        Canvas canvas = adsCancelBtn_GO.GetComponentInParent<Canvas>();
+        Camera canvasCam = null;
+        if (canvas != null)
+        {
+            if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
+            {
+                canvasCam = canvas.worldCamera != null ? canvas.worldCamera : Camera.main;
+            }
+        }
+
+        return RectTransformUtility.RectangleContainsScreenPoint(rect, screenPoint, canvasCam);
+    }
+
+    static Vector2 GetPrimaryClickScreenPosition()
+    {
+        if (Input.touchCount > 0)
+        {
+            for (int i = 0; i < Input.touchCount; i++)
+            {
+                Touch t = Input.GetTouch(i);
+                if (t.phase == TouchPhase.Began)
+                {
+                    return t.position;
+                }
+            }
+        }
+
+        return Input.mousePosition;
+    }
+
     void TryHandleAdsVideoClick()
     {
         if (!adsVideoRenderer_Cp.enabled || string.IsNullOrEmpty(currentVideoClickUrl))
@@ -335,7 +376,9 @@ public class AdsManager : MonoBehaviour
             return;
         }
 
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        Vector2 screenPos = GetPrimaryClickScreenPosition();
+
+        if (IsScreenPointOverActiveAdsCancelButton(screenPos))
         {
             return;
         }
@@ -346,7 +389,7 @@ public class AdsManager : MonoBehaviour
             return;
         }
 
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        Ray ray = cam.ScreenPointToRay(screenPos);
         if (Physics.Raycast(ray, out RaycastHit hitInfo))
         {
             if (hitInfo.collider == adsVideoCollider_Cp)
