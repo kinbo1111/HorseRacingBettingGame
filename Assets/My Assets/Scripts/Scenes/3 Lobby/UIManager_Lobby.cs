@@ -743,7 +743,7 @@ public class UIManager_Lobby : MonoBehaviour
         const float coinSize = 56f;
         const float gapAfterCoin = 12f;
         const float gapBeforePlus = 14f;
-        const float plusWidth = 78f;
+        const float plusWidth = 132f;
         const float plusHeight = 72f;
 
         openBillingPlusButton_RT.anchorMin = new Vector2(0f, 0.5f);
@@ -835,8 +835,8 @@ public class UIManager_Lobby : MonoBehaviour
         Text label = openBillingPlusButton_RT.GetComponentInChildren<Text>(true);
         if (label != null)
         {
-            label.text = "+";
-            label.fontSize = 46;
+            label.text = "秘密の予想\nを買う";
+            label.fontSize = 20;
             label.fontStyle = FontStyle.Bold;
             label.alignment = TextAnchor.MiddleCenter;
             label.color = new Color(1f, 0.98f, 0.88f, 1f);
@@ -844,7 +844,7 @@ public class UIManager_Lobby : MonoBehaviour
             labelRt.anchorMin = Vector2.zero;
             labelRt.anchorMax = Vector2.one;
             labelRt.pivot = new Vector2(0.5f, 0.5f);
-            labelRt.offsetMin = new Vector2(5f, 0f);
+            labelRt.offsetMin = new Vector2(4f, 2f);
             labelRt.offsetMax = Vector2.zero;
 
             Outline labelOl = label.GetComponent<Outline>();
@@ -906,7 +906,7 @@ public class UIManager_Lobby : MonoBehaviour
         {
             return;
         }
-        label.text = "有料アイテムゲットで的中率アップ";
+        label.text = "秘密の予想を買うとさらに的中率アップ";
         label.font = moneyText_Cp != null && moneyText_Cp.font != null
             ? moneyText_Cp.font
             : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -1128,7 +1128,7 @@ public class UIManager_Lobby : MonoBehaviour
         if (titleTxt != null)
         {
             titleTxt.gameObject.SetActive(true);
-            titleTxt.text = "有料アイテムゲットで的中率アップ";
+            titleTxt.text = "秘密の予想を買うとさらに的中率アップ";
             titleTxt.color = Color.white;
             titleTxt.fontSize = 34;
             titleTxt.fontStyle = FontStyle.Normal;

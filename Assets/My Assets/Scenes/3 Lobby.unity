@@ -1708,7 +1708,7 @@ MonoBehaviour:
   videoPlayer_Cp: {fileID: 1642489477}
   testVideoPlayer_Cp: {fileID: 1494837899}
   adsCancelBtn_GO: {fileID: 1848468635}
-  adsPresentPossibility: 1
+  adsPresentPossibility: 0.4
   videoPresentPossibility: 1
   isTestVideoMode: 0
   gameStates: 
