@@ -460,11 +460,18 @@ namespace CodeStage.AntiCheat.Detectors
 			Color32 color2 = wfColor2;
 
 			GUILayout.BeginArea(new Rect(x, y + 50, 200, 70), GUI.skin.box);
-			GUI.color = wfColor1;
-            GUILayout.Label("Color1: " + color1.r + ", " + color1.g + ", " + color1.b + ", " + color1.a);
-			GUI.color = wfColor2;
-			GUILayout.Label("Color2: " + color2.r + ", " + color2.g + ", " + color2.b + ", " + color2.a);
-			GUILayout.EndArea();
+			try
+			{
+				GUI.color = wfColor1;
+	            GUILayout.Label("Color1: " + color1.r + ", " + color1.g + ", " + color1.b + ", " + color1.a);
+				GUI.color = wfColor2;
+				GUILayout.Label("Color2: " + color2.r + ", " + color2.g + ", " + color2.b + ", " + color2.a);
+			}
+			finally
+			{
+				GUILayout.EndArea();
+				GUI.color = Color.white;
+			}
 		}
 #endif
 		#endregion

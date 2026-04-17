@@ -58,37 +58,42 @@ namespace CodeStage.AntiCheat.Examples
 			}
 
 			GUILayout.BeginArea(new Rect(10, 5, Screen.width - 20, Screen.height - 10));
-
-			GUILayout.Label("<color=\"#0287C8\"><b>Anti-Cheat Toolkit Sandbox</b></color>", centeredStyle);
-			GUILayout.Label("Here you can overview common ACTk features and try to cheat something yourself.", centeredStyle);
-			GUILayout.Space(5);
-
-			currentPage = (ExamplePage)GUILayout.Toolbar((int)currentPage, tabs);
-
-			switch (currentPage)
+			try
 			{
-				case ExamplePage.ObscuredTypes:
+				GUILayout.Label("<color=\"#0287C8\"><b>Anti-Cheat Toolkit Sandbox</b></color>", centeredStyle);
+				GUILayout.Label("Here you can overview common ACTk features and try to cheat something yourself.", centeredStyle);
+				GUILayout.Space(5);
+
+				currentPage = (ExamplePage)GUILayout.Toolbar((int)currentPage, tabs);
+
+				switch (currentPage)
 				{
-					obscuredTypesExamples.DrawUI(this);
-					break;
-				}
-				case ExamplePage.SavesProtection:
-				{
-					DrawSavesProtectionPage();
-					break;
-				}
-				case ExamplePage.Detectors:
-				{
-					detectorsExamples.DrawUI();
-					break;
-				}
-				case ExamplePage.CodeHashing:
-				{
-					codeHashExamples.DrawUI();
-					break;
+					case ExamplePage.ObscuredTypes:
+					{
+						obscuredTypesExamples.DrawUI(this);
+						break;
+					}
+					case ExamplePage.SavesProtection:
+					{
+						DrawSavesProtectionPage();
+						break;
+					}
+					case ExamplePage.Detectors:
+					{
+						detectorsExamples.DrawUI();
+						break;
+					}
+					case ExamplePage.CodeHashing:
+					{
+						codeHashExamples.DrawUI();
+						break;
+					}
 				}
 			}
-			GUILayout.EndArea();
+			finally
+			{
+				GUILayout.EndArea();
+			}
 		}
 
 		private void DrawSavesProtectionPage()
