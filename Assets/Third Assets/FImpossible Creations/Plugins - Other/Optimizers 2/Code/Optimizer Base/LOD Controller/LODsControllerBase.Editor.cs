@@ -144,6 +144,7 @@ namespace FIMSpace.FOptimizing
                     {
                         CheckComponentsCorrectness();
                         GUI.color = preCol;
+                        EditorGUILayout.EndVertical();
                         return;
                     }
                     else
